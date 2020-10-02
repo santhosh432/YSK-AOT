@@ -51,7 +51,8 @@ class EightQueenProblem:
 
     def select_best_individuals(self):
         res = self.select_n_individual()
-        print('Select best individuals:', self.best_individuals)
+        print('Select best individuals:', res)
+
         # todo select best n
         res = random.sample(res, self.best_individuals)
         print(res)
@@ -60,26 +61,40 @@ class EightQueenProblem:
     def cut_and_cross(self):
         """ cut and cross fill over """
         res = self.select_best_individuals()
+        print('Cut and cross')
 
         parent_one = res[0]
         parent_two = res[1]
 
+        print('Parent one', parent_one)
+        print('Parent two', parent_two)
+
+        print('self.random_cross_over_point:', self.random_cross_over_point)
         child_one = parent_one[:self.random_cross_over_point]
         child_two = parent_two[:self.random_cross_over_point]
 
+        print('child_one ', child_one)
+        print('child_two ', child_two)
+
         for p1 in parent_two:
-            if not p1 in child_one:
+            if  p1 not in child_one:
                 child_one.append(p1)
 
         for p2 in parent_one:
-            if not p2 in child_one:
+            if p2 not in child_two:
                 child_two.append(p2)
 
-        return child_one, child_two
+        print('Fchild_one ', child_one)
+        print('Fchild_two ', child_two)
+        return [child_one, child_two]
 
     def mutation_process(self):
         """ mutation process , assume child one is off string """
         res = self.cut_and_cross()
+        print('Mutation process', res)
+
+        print(res)
+        # off_string = random.sample(res, 1)
         off_string = res[0]
         print('Off string :', off_string)
 
@@ -95,7 +110,7 @@ class EightQueenProblem:
 
 if __name__ == '__main__':
 
-    obj = EightQueenProblem(population_size=5, random_individuals=3, best_individuals=2, random_cross_over_point=4)
+    obj = EightQueenProblem(population_size=500, random_individuals=300, best_individuals=2, random_cross_over_point=4)
     # obj.get_population()
     # obj.select_n_individual()
     # obj.select_best_individuals()
