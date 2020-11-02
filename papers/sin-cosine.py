@@ -40,19 +40,23 @@ class SinCosine:
         self.best_value = sorted(self.values, key = lambda x: x['fitness'])[0]['candidate']
 
 
+
+
+
 if __name__ == '__main__':
-    obj = SinCosine(population_size=6, max_iterations=100, upper_bound=5, lower_bound=-5)
+    obj = SinCosine(population_size=6, max_iterations=100, upper_bound=500, lower_bound=-500)
     obj.populations()
     print(obj.values)
     v = obj.values
     b = obj.best_value
-
+    stop = False
     for t in range(1, obj.max_iterations + 1):
+
+        if stop:
+            break
         r1 = (2 - 2 * (t / obj.max_iterations))
 
         for i in range(obj.populations_size):
-            new1 = v[i]['candidate'][0]
-            new2 = v[i]['candidate'][1]
 
             for j in range(2):
                 r4 = random.uniform(0, 1)
@@ -72,12 +76,17 @@ if __name__ == '__main__':
                     v[i]['candidate'][j] = obj.upper_bound
 
             v[i]['fitness'] = obj.fitness(v[i]['candidate'][0], v[i]['candidate'][1])
+
+            if v[i]['fitness'] == 0:
+                stop = True
+
             print(v[i])
         b = sorted(v, key = lambda x: x['fitness'])[0]['candidate']
         print('Best :', b)
     # print('Final', t)
     print(v)
     print(sorted(v, key = lambda x : x['fitness'])[0])
+    print('Total Iterations:', t)
 
 
 
