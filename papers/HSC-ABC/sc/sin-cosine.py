@@ -4,6 +4,8 @@ Topic: Sin cosine optimization algorithm
 """
 import random
 import numpy as np
+import copy
+
 
 class SinCosine:
     """ initialize parameters """
@@ -23,9 +25,16 @@ class SinCosine:
         self.dim = dim
 
 
-    def fitness(self, x1 , x2):
-        """ objective function for the problem """
-        return x1 ** 2 + x2 **2
+    def fitness(self, p=list()):
+        """ objective function for the problem
+            input:
+                p : list of elements with all dimension [x1, x2, x3, .... xn]
+
+            output:
+                squares of all elements
+
+        """
+        return sum([i * i for i in p])
 
     def random_uniform(self):
         """ random two decimal point eg: 0.00 """
@@ -37,10 +46,13 @@ class SinCosine:
         """ set population """
 
         # Population : [[3.53, -1.69], [-3.59, 0.34], [-4.29, -1.95], [2.08, -4.75], [0.14, -3.02], [1.39, 4.92]]
+        pop = list()
+        for _ in range(self.populations_size):
+            ind = list()
+            for i in range(self.dim):
+                ind.append(round(random.uniform(self.lower_bound, self.upper_bound),2))
 
-        pop = [[round(random.uniform(self.lower_bound, self.upper_bound),2),
-                round(random.uniform(self.lower_bound, self.upper_bound),2)] for _ in range(6)]
-
+            pop.append(ind)
 
         # Population : [[5, -5], [2, 3], [-3, 5], [1, 2], [-5, -4], [-4, -4]]
         # pop = [[random.randint(self.lower_bound, self.upper_bound), random.randint(self.lower_bound, self.upper_bound)] for _ in range(6)]
@@ -48,11 +60,11 @@ class SinCosine:
         print('Population :', pop)
 
         for i in range(self.populations_size):
-            fit = self.fitness(pop[i][0], pop[i][1])
+            fit = self.fitness(pop[i])
             self.values.append({'candidate': pop[i],
                                 'fitness': fit})
 
-        self.best_value = sorted(self.values, key = lambda x: x['fitness'])[0]['candidate']
+        self.best_value = copy.deepcopy(sorted(self.values, key = lambda x: x['fitness'])[0]['candidate'])
 
     def run(self):
         """ run process """
@@ -89,25 +101,19 @@ class SinCosine:
                     else:
                         pass
 
-                self.values[i]['fitness'] = self.fitness(self.values[i]['candidate'][0], self.values[i]['candidate'][1])
+                self.values[i]['fitness'] = self.fitness(self.values[i]['candidate'])
 
-                if self.values[i]['fitness'] == 0:
-                    stop = True
+                # if fitness == 0 , solution found
+                # if self.values[i]['fitness'] == 0:
+                #     stop = True
 
                 print(self.values[i])
-            self.best_value = sorted(self.values, key = lambda x: x['fitness'])[0]['candidate']
+            self.best_value = copy.deepcopy(sorted(self.values, key = lambda x: x['fitness'])[0]['candidate'])
 
 
 if __name__ == '__main__':
-    obj = SinCosine(population_size=6, max_iterations=100, upper_bound=5, lower_bound=-5, dim=2)
+    obj = SinCosine(population_size=6, max_iterations=1, upper_bound=100, lower_bound=-100, dim=10)
     obj.run()
-    print('Best value :', obj.best_value)
+    print('Best value :', obj.best_value, obj.fitness(obj.best_value))
 
 
-
-# if __name__ == '__main__':
-#
-#     obj = SinCosine(population_size=6, max_iterations=100, upper_bound=5, lower_bound=-5, dim=2)
-#
-#     for i in range(10):
-#         print(obj.random_uniform())
