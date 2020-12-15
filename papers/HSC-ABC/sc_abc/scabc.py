@@ -26,21 +26,21 @@ class ABC:
         """ function with d dimensional
             I = list() list of elements eg [x1, x2]
         """
-        return round(I[0]*I[0] - I[0]*I[1] + I[1] * I[1] + 2* I[0] + 4*I[1] + 3, 4)
+        return sum([k * k for k in I])
         # return x1*x1 - x1*x2 + x2 * x2 + 2* x1 + 4*x2 + 3
 
     @staticmethod
     def fitness(fun):
         """ fitness of the function """
         if fun >= 0:
-            f = 1 / (1 + fun)
+            f = 1 / float(1 + fun)
         else:
             f = 1 + abs(fun)
 
-        return round(f,4)
+        return round(f,20)
 
     def initial_population(self):
-          # {'candidate: [1,2], 'fit': 25, 'fitness': 0.02, 'trail': 0}
+        # {'candidate: [1,2], 'fit': 25, 'fitness': 0.02, 'trail': 0}
         for i in range(self.population_size):
             initial = dict()
             # print(i)
@@ -54,7 +54,9 @@ class ABC:
             initial['fitness'] = self.fitness(self.function(I=X))
             initial['trail'] = 0
             self.initial_pop.append(initial)
-        self.best = sorted(self.initial_pop, key=lambda x: x['fitness'])[0]
+        self.best = sorted(self.initial_pop, key=lambda x: x['fit'])[0]
+        print("Initial population")
+        print(self.initial_pop)
         return self.initial_pop
 
     def greedy_selection(self, old, new, trail):
@@ -82,13 +84,13 @@ class ABC:
 
     def best_solution(self, pop):
 
-        current_best = sorted(pop, key=lambda x: x['fit'], reverse=True)[0]
+        current_best = sorted(pop, key=lambda x: x['fitness'], reverse=True)[0]
         # print(current_best, '--', self.best)
 
         # print(float(current_best['fit']))
 
         # print('Previous best:-', float(self.best['fit']))
-        if float(current_best['fit']) > float(self.best['fit']):
+        if float(current_best['fitness']) > float(self.best['fitness']):
             # print(current_best)
             best = current_best
         else:
@@ -97,10 +99,18 @@ class ABC:
         # print('Latest best:-',best['fit'])
         return best
 
+    def fbest_fworst(self, pop):
+        """ get fbest and fworst """
+
+        fbest = sorted(pop, key=lambda x: x['fit'])[0]['fit']
+        fworst = sorted(pop, key=lambda x: x['fit'], reverse=True)[0]['fit']
+
+        return {'fbest':fbest, 'fworst':fworst, 'result': round((fbest/fworst), 4)}
+
     def random_uniform(self):
         """ random two decimal point eg: 0.00 """
         r = random.uniform(0,1)
-        return round(r,2)
+        return round(r, 2)
 
     def employee_bee_phase(self, iteration):
         """ employee bee phase with iteration number """
@@ -108,20 +118,26 @@ class ABC:
         # print('Employee -1')
         # print('Sub Iteration:---', i, emp[i]['candidate])
         source = copy.deepcopy(self.initial_pop)
-
-        r1  = (2 - 2 * (iteration / self.iterations))
+        result = self.fbest_fworst(source)
+        print(result['result'])
+        r1 = (2 - 2 * (iteration / self.iterations))
         for i in range(self.population_size):
 
+            old_source = copy.deepcopy(source[i]['candidate'])
             # run all possible solution
             for j in range(self.dim):
                 # dimension of problem eg: x1, x2 (total parameters)
                 r4 = self.random_uniform()
 
                 if r4 < 0.5:
-                    v = round(source[i]['candidate'][j] + r1 * np.sin(2 * np.pi * self.random_uniform()) * abs(self.random_uniform() * self.best['candidate'][j] - source[i]['candidate'][j]), 10)
+                    v = self.best['candidate'][j] + (result['result'] * np.sin(2 * np.pi * self.random_uniform()) * abs(self.random_uniform() * self.best['candidate'][j] - source[i]['candidate'][j]))
+
+                    # v = round(source[i]['candidate'][j] + r1 * np.sin(2 * np.pi * self.random_uniform()) * abs(self.random_uniform() * self.best['candidate'][j] - source[i]['candidate'][j]), 10)
                     source[i]['candidate'][j] = v
                 else:
-                    v = round(source[i]['candidate'][j] + r1 * np.cos(2 * np.pi * self.random_uniform()) * abs(self.random_uniform() * self.best['candidate'][j] - source[i]['candidate'][j]), 10)
+                    v = self.best['candidate'][j] + (result['result'] * np.cos(2 * np.pi * self.random_uniform()) * abs(self.random_uniform() * self.best['candidate'][j] - source[i]['candidate'][j]))
+
+                    # v = round(source[i]['candidate'][j] + r1 * np.cos(2 * np.pi * self.random_uniform()) * abs(self.random_uniform() * self.best['candidate'][j] - source[i]['candidate'][j]), 10)
                     source[i]['candidate'][j] = v
 
                 if source[i]['candidate'][j] < self.lower_bound:
@@ -135,13 +151,11 @@ class ABC:
                 else:
                     pass
 
-            old_source = copy.deepcopy(source[i]['fitness'])
-            source[i]['fitness'] = self.fitness(source[i]['candidate'])
-            new_source = copy.deepcopy(source[i]['fitness'])
+            # source[i]['fitness'] = self.fitness(source[i]['candidate'])
+            new_source = copy.deepcopy(source[i]['candidate'])
             # if fitness == 0 , solution found
-            if source[i]['fitness'] == 0:
-                stop = True
-            self.values = copy.deepcopy(source)
+            # if source[i]['fitness'] == 0:
+            #     stop = True
         # emp[i]['candidate] = new_source
 
             g = self.greedy_selection(old_source, new_source, source[i]['trail'])
@@ -151,19 +165,25 @@ class ABC:
             source[i]['fitness'] = g['fitness']
             source[i]['trail'] = g['trail']
 
-        # self.initial_pop = emp
+            # print('NEW ------------------------ OLD')
+            # print(old_source, new_source)
+
+        self.initial_pop = copy.deepcopy(source)
         self.best = copy.deepcopy(self.best_solution(self.initial_pop))
+        # print('Employee:')
+        # print(self.initial_pop)
+
         return self.initial_pop
 
     def onlooker_bee_phase(self):
         """ onlooker bee phase """
 
         # emp = self.employee_bee_phase()
-        emp = copy.deepcopy(self.initial_pop.copy())
+        emp = copy.deepcopy(self.initial_pop)
         # print('Onlooker -1')
-
+        # print(emp)
         # print('Initial 2', emp)
-        sigma_total = sum([ i['fitness'] for i in emp])
+        sigma_total = sum([i['fitness'] for i in emp])
 
         # print(sigma_total)
         rand = random.uniform(0, 1)
@@ -172,6 +192,8 @@ class ABC:
             prob = emp[i]['fitness'] / sigma_total
 
             if rand < prob:
+
+                old_source = copy.deepcopy(emp[i]['candidate'])
 
                 random_partner_source = random.choice(range(self.population_size))  # random partner [x1, x2]
                 random_choice = random.choice(range(self.dim))  # random dimension 0 or 1
@@ -191,13 +213,9 @@ class ABC:
                 else:
                     x_new = x_new
 
-                old_source = emp[i]['candidate'].copy()
-
                 new_source = emp[i]['candidate']
 
-
                 new_source[random_choice] = x_new
-
 
                 g = self.greedy_selection(old_source, new_source, emp[i]['trail'])
 
@@ -206,16 +224,18 @@ class ABC:
                 emp[i]['fitness'] = g['fitness']
                 emp[i]['trail'] = g['trail']
 
-        # self.initial_pop = emp
+        self.initial_pop = copy.deepcopy(emp)
         self.best = copy.deepcopy(self.best_solution(self.initial_pop))
         # print("After onlooker:-", self.best)
         # print([i['trail'] for i in emp])
+        # print('Onlooker')
+        # print(self.initial_pop)
         return self.initial_pop
 
     def scout_phase(self):
         """ 3. scout phase """
         # emp = self.onlooker_bee_phase()
-        emp = self.initial_pop.copy()
+        emp = copy.deepcopy(self.initial_pop)
         # print('Scout ')
         # print('Before scout:', self.best)
 
@@ -235,16 +255,13 @@ class ABC:
                 emp[s]['fitness'] = self.fitness(self.function(I=SX))
                 emp[s]['trail'] = 0
         if change:
-            # self.initial_pop = emp
+            self.initial_pop = copy.deepcopy(emp)
             self.best = copy.deepcopy(self.best_solution(self.initial_pop))
-            # print('After scout:', self.best)
-
-            # return self.initial_pop
-
-
+            # print('Scout')
+            # print(self.initial_pop)
 
 if __name__ == '__main__':
-    obj = ABC(population_size=5, iterations=50, dim=2, lower_bound=-5, upper_bound=5, limit=2)
+    obj = ABC(population_size=6, iterations=500, dim=10, lower_bound=-10, upper_bound=10, limit=50)
 
     obj.initial_population()
 
@@ -255,16 +272,21 @@ if __name__ == '__main__':
         obj.employee_bee_phase(iteration=j)
         obj.onlooker_bee_phase()
         obj.scout_phase()
-        print(obj.best)
+        # print('Fitness',obj.best['fitness'])
+        # print('Fit:', obj.best)
         print('====================')
+
+    print(obj.best)
     # print(obj.initial_pop)
     # print(json.dumps(obj.best, indent=5))
     # print(obj.best)
 
 
 
-
+#
 # if __name__ == '__main__':
 #     obj= obj = ABC(population_size=5, iterations=50, dim=2, lower_bound=-5, upper_bound=5, limit=2)
-#     print(obj.function([-5,5]))
-#     print(obj.function([-5,4.7783]))
+#
+#     print(obj.function(I=[-7.1348, 1.4111, -4.5631, -0.8517, 4.3808, 2.2229, -0.1779, -1.0129, -2.6857, 7.0717]))
+#     print(obj.function(I=[-7.1348, 1.4111, -4.5631, -0.8517, 4.3808, 2.2229, -0.1779, -1.0129, -2.6857, 7.0717]))
+
