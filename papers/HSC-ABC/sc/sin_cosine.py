@@ -5,7 +5,7 @@ Topic: Sin cosine optimization algorithm
 import random
 import numpy as np
 import copy
-
+import math
 
 class SinCosine:
     """ initialize parameters """
@@ -57,14 +57,14 @@ class SinCosine:
         # Population : [[5, -5], [2, 3], [-3, 5], [1, 2], [-5, -4], [-4, -4]]
         # pop = [[random.randint(self.lower_bound, self.upper_bound), random.randint(self.lower_bound, self.upper_bound)] for _ in range(6)]
 
-        print('Population :', pop)
+        # print('Population :', pop)
 
         for i in range(self.populations_size):
             fit = self.fitness(pop[i])
             self.values.append({'candidate': pop[i],
                                 'fitness': fit})
 
-        self.best_value = copy.deepcopy(sorted(self.values, key = lambda x: x['fitness'])[0]['candidate'])
+        self.best_value = copy.deepcopy(sorted(self.values, key = lambda x: x['fitness'])[0])
 
     def run(self):
         """ run process """
@@ -72,7 +72,8 @@ class SinCosine:
         stop = False
         for t in range(1, self.max_iterations + 1):
             # run over iterations
-            print("Iteration number:-", t)
+            # print("Iteration number:-", t)
+            source = copy.deepcopy(self.values)
             if stop:
                 break
             r1  = (2 - 2 * (t / self.max_iterations))
@@ -84,36 +85,39 @@ class SinCosine:
                     r4 = self.random_uniform()
 
                     if r4 < 0.5:
-                        v = round(self.values[i]['candidate'][j] + r1 * np.sin(2 * np.pi * self.random_uniform()) * abs(self.random_uniform() * self.best_value[j] - self.values[i]['candidate'][j]), 2)
-                        self.values[i]['candidate'][j] = v
+                        v = round(source[i]['candidate'][j] + r1 * np.sin(2 * np.pi * self.random_uniform()) * abs(self.random_uniform() * self.best_value['candidate'][j] - source[i]['candidate'][j]), 10)
+                        source[i]['candidate'][j] = v
                     else:
-                        v = round(self.values[i]['candidate'][j] + r1 * np.cos(2 * np.pi * self.random_uniform()) * abs(self.random_uniform() * self.best_value[j] - self.values[i]['candidate'][j]), 2)
-                        self.values[i]['candidate'][j] = v
+                        v = round(source[i]['candidate'][j] + r1 * np.cos(2 * np.pi * self.random_uniform()) * abs(self.random_uniform() * self.best_value['candidate'][j] - source[i]['candidate'][j]), 10)
+                        source[i]['candidate'][j] = v
 
-                    if self.values[i]['candidate'][j] < self.lower_bound:
-                        print('Lower ==================', self.values[i]['candidate'][j])
+                    if source[i]['candidate'][j] < self.lower_bound:
+                        # print('Lower ==================', source[i]['candidate'][j])
 
-                        self.values[i]['candidate'][j] = self.lower_bound
-                    elif self.values[i]['candidate'][j] > self.upper_bound:
-                        print('Upper ==================', self.values[i]['candidate'][j])
+                        source[i]['candidate'][j] = self.lower_bound
+                    elif source[i]['candidate'][j] > self.upper_bound:
+                        # print('Upper ==================', source[i]['candidate'][j])
 
-                        self.values[i]['candidate'][j] = self.upper_bound
+                        source[i]['candidate'][j] = self.upper_bound
                     else:
                         pass
 
-                self.values[i]['fitness'] = self.fitness(self.values[i]['candidate'])
+                source[i]['fitness'] = self.fitness(source[i]['candidate'])
 
                 # if fitness == 0 , solution found
-                # if self.values[i]['fitness'] == 0:
-                #     stop = True
+                if source[i]['fitness'] == 0:
+                    stop = True
+                self.values = copy.deepcopy(source)
+                # print(source[i])
 
-                print(self.values[i])
-            self.best_value = copy.deepcopy(sorted(self.values, key = lambda x: x['fitness'])[0]['candidate'])
-
+            pbest = copy.deepcopy(sorted(source, key = lambda x: x['fitness'])[0])
+            # print(pbest['fitness'], self.best_value['fitness'])
+            if pbest['fitness'] < self.best_value['fitness']:
+                self.best_value = copy.deepcopy(pbest)
 
 if __name__ == '__main__':
-    obj = SinCosine(population_size=6, max_iterations=1, upper_bound=100, lower_bound=-100, dim=10)
+    obj = SinCosine(population_size=6, max_iterations=500, upper_bound=100, lower_bound=-100, dim=10)
     obj.run()
-    print('Best value :', obj.best_value, obj.fitness(obj.best_value))
+    print('Best value :', obj.best_value)
 
 
